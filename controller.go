@@ -12,10 +12,10 @@ func GetConfig(c *gin.Context) {
 	platformKey := "platform:" + c.Query("platform")
 	locationKey := "location:" + c.Query("location")
 
-	redisconn := redisPool.Get()
-	defer redisconn.Close()
+	redisConn := redisPool.Get()
+	defer redisConn.Close()
 
-	configIds, err := redis.Strings(redisconn.Do("SINTER", componentKey, platformKey, locationKey))
+	configIds, err := redis.Strings(redisConn.Do("SINTER", componentKey, platformKey, locationKey))
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
@@ -25,7 +25,7 @@ func GetConfig(c *gin.Context) {
 	if len(configIds) > 0 {
 		configIdToServe = configIds[0]
 	} else {
-		configIds, err = redis.Strings(redisconn.Do("SINTER", componentKey, platformKey))
+		configIds, err = redis.Strings(redisConn.Do("SINTER", componentKey, platformKey))
 		if err != nil {
 			c.AbortWithStatus(500)
 			fmt.Println(err)
@@ -35,7 +35,7 @@ func GetConfig(c *gin.Context) {
 		if len(configIds) > 0 {
 			configIdToServe = configIds[0]
 		} else {
-			configIds, err = redis.Strings(redisconn.Do("SINTER", componentKey, locationKey))
+			configIds, err = redis.Strings(redisConn.Do("SINTER", componentKey, locationKey))
 			if err != nil {
 				c.AbortWithStatus(500)
 				fmt.Println(err)
@@ -45,7 +45,7 @@ func GetConfig(c *gin.Context) {
 			if len(configIds) > 0 {
 				configIdToServe = configIds[0]
 			} else {
-				configIds, err = redis.Strings(redisconn.Do("SMEMBERS", componentKey))
+				configIds, err = redis.Strings(redisConn.Do("SMEMBERS", componentKey))
 				if err != nil {
 					c.AbortWithStatus(500)
 					fmt.Println(err)
@@ -64,7 +64,7 @@ func GetConfig(c *gin.Context) {
 		db.First(&config, configIdToServe)
 		c.JSON(200, config)
 	} else {
-		c.JSON(200, nil)
+		c.JSON(204, nil)
 	}
 }
 
@@ -83,22 +83,22 @@ func CreateConfig(c *gin.Context) {
 	c.BindJSON(&config)
 	db.Create(&config)
 
-	redisconn := redisPool.Get()
-	defer redisconn.Close()
+	redisConn := redisPool.Get()
+	defer redisConn.Close()
 
-	_, err := redisconn.Do("SADD", "component:"+config.Component, config.ID)
+	_, err := redisConn.Do("SADD", "component:"+config.Component, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SADD", "platform:"+config.Platform, config.ID)
+	_, err = redisConn.Do("SADD", "platform:"+config.Platform, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SADD", "location:"+config.Location, config.ID)
+	_, err = redisConn.Do("SADD", "location:"+config.Location, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
@@ -117,22 +117,22 @@ func UpdateConfig(c *gin.Context) {
 		return
 	}
 
-	redisconn := redisPool.Get()
-	defer redisconn.Close()
+	redisConn := redisPool.Get()
+	defer redisConn.Close()
 
-	_, err := redisconn.Do("SREM", "component:"+config.Component, config.ID)
+	_, err := redisConn.Do("SREM", "component:"+config.Component, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SREM", "platform:"+config.Platform, config.ID)
+	_, err = redisConn.Do("SREM", "platform:"+config.Platform, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SREM", "location:"+config.Location, config.ID)
+	_, err = redisConn.Do("SREM", "location:"+config.Location, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
@@ -142,19 +142,19 @@ func UpdateConfig(c *gin.Context) {
 	c.BindJSON(&config)
 	db.Save(&config)
 
-	_, err = redisconn.Do("SADD", "component:"+config.Component, config.ID)
+	_, err = redisConn.Do("SADD", "component:"+config.Component, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SADD", "platform:"+config.Platform, config.ID)
+	_, err = redisConn.Do("SADD", "platform:"+config.Platform, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SADD", "location:"+config.Location, config.ID)
+	_, err = redisConn.Do("SADD", "location:"+config.Location, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
@@ -175,22 +175,22 @@ func DeleteConfig(c *gin.Context) {
 
 	db.Delete(&config)
 
-	redisconn := redisPool.Get()
-	defer redisconn.Close()
+	redisConn := redisPool.Get()
+	defer redisConn.Close()
 
-	_, err := redisconn.Do("SREM", "component:"+config.Component, config.ID)
+	_, err := redisConn.Do("SREM", "component:"+config.Component, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SREM", "platform:"+config.Platform, config.ID)
+	_, err = redisConn.Do("SREM", "platform:"+config.Platform, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)
 		return
 	}
-	_, err = redisconn.Do("SREM", "location:"+config.Location, config.ID)
+	_, err = redisConn.Do("SREM", "location:"+config.Location, config.ID)
 	if err != nil {
 		c.AbortWithStatus(500)
 		fmt.Println(err)

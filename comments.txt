@@ -1,0 +1,2 @@
+In order to run the app you need to have Redis installed.
+Then, configure its connection properties both on app.go & controller_test.go.

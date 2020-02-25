@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	db = NewDatabaseConnection("sqlite3", "spotim-test.db")
+	db = NewDatabaseConnection("sqlite3", "spotim.db")
 	db.AutoMigrate(&AdConfiguration{})
 
 	redisPool = NewRedisPool(80, 12000, "localhost:6379")
